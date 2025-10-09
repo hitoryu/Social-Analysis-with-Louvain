@@ -1,0 +1,253 @@
+# src/visualization.py
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+import seaborn as sns
+from matplotlib.colors import ListedColormap
+import time
+
+class ResultVisualizer:
+    def __init__(self, graph: nx.Graph, partition: dict):
+        self.G = graph
+        self.partition = partition
+        plt.style.use('default')
+        
+    def diagnose_network_issues(self):
+        """Check why edges might not be visible"""
+        print("\n🔍 NETWORK DIAGNOSTICS:")
+        print(f"   Total nodes: {self.G.number_of_nodes()}")
+        print(f"   Total edges: {self.G.number_of_edges()}")
+        print(f"   Network density: {nx.density(self.G):.6f}")
+        print(f"   Average degree: {sum(dict(self.G.degree()).values()) / self.G.number_of_nodes():.2f}")
+        
+        # Check if edges exist
+        if self.G.number_of_edges() == 0:
+            print("❌ CRITICAL: No edges in the graph!")
+            return False
+        
+        # Check graph connectivity
+        if nx.is_connected(self.G):
+            print("   Graph is fully connected")
+        else:
+            components = list(nx.connected_components(self.G))
+            print(f"   Graph has {len(components)} connected components")
+            print(f"   Largest component: {len(max(components, key=len))} nodes")
+        
+        # Sample some edges to verify they exist
+        sample_edges = list(self.G.edges())[:5]
+        print(f"   Sample edges: {sample_edges}")
+        
+        return True
+
+    def plot_network_guaranteed(self, figsize=(14, 10)):
+        """Network plot that GUARANTEES visible edges"""
+        print("🎨 Creating network with guaranteed visible edges...")
+        
+        # Run diagnostics first
+        self.diagnose_network_issues()
+        
+        plt.figure(figsize=figsize)
+        pos = nx.spring_layout(self.G, seed=42, k=1, iterations=50)
+        
+        unique_communities = list(set(self.partition.values()))
+        colors = plt.cm.Set3(np.linspace(0, 1, len(unique_communities)))
+        
+        print(f"📏 Drawing {self.G.number_of_edges()} edges with high visibility...")
+        
+        # 1. FIRST draw edges with high visibility
+        nx.draw_networkx_edges(
+            self.G, pos,
+            alpha=0.8,           # High visibility
+            edge_color='#2E86AB', # Nice blue color
+            width=1.5,           # Thick lines
+            style='-'
+        )
+        
+        # 2. THEN draw nodes (slightly transparent so edges show through)
+        for i, comm_id in enumerate(unique_communities):
+            nodes = [node for node in self.G.nodes() if self.partition[node] == comm_id]
+            nx.draw_networkx_nodes(
+                self.G, pos,
+                nodelist=nodes,
+                node_color=[colors[i]],
+                node_size=150,      # Larger nodes
+                alpha=0.9,          # Slightly transparent
+                edgecolors='black', # Black borders
+                linewidths=0.8,     # Border thickness
+                label=f'Community {comm_id}'
+            )
+        
+        # 3. Add labels for small networks
+        if len(self.G.nodes()) <= 100:
+            nx.draw_networkx_labels(self.G, pos, font_size=8, font_color='darkred')
+        
+        plt.title('Network Communities - Clear Edge Visualization', fontsize=16, fontweight='bold')
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.axis('off')
+        plt.tight_layout()
+        
+        # Save with high quality
+        plt.savefig('../results/images/network_clear_edges.png', dpi=300, bbox_inches='tight')
+        print("✅ Network with clear edges saved to: ../results/images/network_clear_edges.png")
+        
+        plt.show(block=False)
+        plt.pause(2)
+        print("👀 You should now see clear BLUE lines connecting the circles!")
+        
+        return plt.gcf()
+
+    def plot_network_for_large_graph(self, figsize=(15, 12)):
+        """Optimized for large networks like SNAP Facebook"""
+        print("🖼️  Creating optimized visualization for large network...")
+        
+        plt.figure(figsize=figsize)
+        pos = nx.spring_layout(self.G, seed=42, k=0.3, iterations=30)  # More spread out
+        
+        unique_communities = list(set(self.partition.values()))
+        colors = plt.cm.tab10(np.linspace(0, 1, min(10, len(unique_communities))))
+        
+        print(f"📊 Network has {self.G.number_of_nodes()} nodes and {self.G.number_of_edges()} edges")
+        
+        # For very large networks, use thinner but visible edges
+        edge_alpha = 0.3 if self.G.number_of_edges() > 10000 else 0.5
+        edge_width = 0.5 if self.G.number_of_edges() > 10000 else 1.0
+        
+        # Draw edges first
+        nx.draw_networkx_edges(
+            self.G, pos, 
+            alpha=edge_alpha, 
+            edge_color='#FF6B6B',  # Red color for visibility
+            width=edge_width
+        )
+        
+        # Draw nodes
+        node_size = 20 if self.G.number_of_nodes() > 1000 else 50
+        for i, comm_id in enumerate(unique_communities):
+            if i >= 10:  # Limit colors
+                break
+            nodes = [node for node in self.G.nodes() if self.partition[node] == comm_id]
+            nx.draw_networkx_nodes(
+                self.G, pos, nodelist=nodes, 
+                node_color=[colors[i]], 
+                node_size=node_size, 
+                alpha=0.7, 
+                label=f'Comm {comm_id}'
+            )
+        
+        plt.title(f'Large Network: {len(self.G.nodes())} users, {len(self.G.edges())} connections', 
+                  fontsize=12, fontweight='bold')
+        plt.legend(fontsize=8, bbox_to_anchor=(1.05, 1))
+        plt.axis('off')
+        plt.tight_layout()
+        
+        plt.savefig('../results/images/network_large_optimized.png', dpi=300, bbox_inches='tight')
+        print("✅ Large network visualization saved!")
+        plt.show(block=False)
+        plt.pause(2)
+        
+        return plt.gcf()
+
+    def plot_community_size_distribution(self, community_sizes: list):
+        """Plot community size distribution"""
+        print("📊 Generating community size distribution...")
+        
+        plt.figure(figsize=(12, 5))
+        
+        plt.subplot(1, 2, 1)
+        plt.hist(community_sizes, bins=15, alpha=0.7, color='skyblue', edgecolor='black')
+        plt.xlabel('Community Size')
+        plt.ylabel('Frequency')
+        plt.title('Community Size Distribution')
+        plt.grid(True, alpha=0.3)
+        
+        plt.subplot(1, 2, 2)
+        sizes_sorted = sorted(community_sizes, reverse=True)
+        plt.plot(range(1, len(sizes_sorted) + 1), sizes_sorted, 'o-', linewidth=2, color='green')
+        plt.xlabel('Community Rank')
+        plt.ylabel('Size')
+        plt.title('Rank-Size Distribution')
+        plt.grid(True, alpha=0.3)
+        if max(sizes_sorted) > 100:  # Use log scale for large ranges
+            plt.yscale('log')
+        
+        plt.tight_layout()
+        plt.savefig('../results/images/community_size_distribution.png', dpi=300, bbox_inches='tight')
+        print("✅ Community size distribution saved!")
+        
+        plt.show(block=False)
+        plt.pause(1)
+
+    def plot_centrality_analysis(self, influential_nodes: dict):
+        """Plot centrality analysis"""
+        print("📈 Generating centrality analysis...")
+        
+        fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+        
+        measures = list(influential_nodes.keys())
+        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']  # Nice color scheme
+        
+        for idx, measure in enumerate(measures):
+            nodes_data = influential_nodes[measure][:6]  # Top 6 nodes
+            nodes = [f"Node {x[0]}" for x in nodes_data]
+            scores = [x[1] for x in nodes_data]
+            communities = [x[2] for x in nodes_data]
+            
+            bars = axes[idx].bar(nodes, scores, color=colors[idx], alpha=0.7, edgecolor='black')
+            axes[idx].set_title(f'{measure.capitalize()} Centrality', fontweight='bold')
+            axes[idx].set_ylabel('Centrality Score')
+            axes[idx].tick_params(axis='x', rotation=45)
+            axes[idx].grid(True, alpha=0.3)
+            
+            # Add values on bars
+            for bar, score in zip(bars, scores):
+                axes[idx].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.001,
+                             f'{score:.3f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+            
+            # Add community info
+            for i, (node, comm) in enumerate(zip(nodes, communities)):
+                axes[idx].text(i, -0.1, f'Comm {comm}', ha='center', va='top', 
+                             fontsize=8, transform=axes[idx].transData)
+        
+        plt.tight_layout()
+        plt.savefig('../results/images/centrality_analysis.png', dpi=300, bbox_inches='tight')
+        print("✅ Centrality analysis saved!")
+        
+        plt.show(block=False)
+        plt.pause(1)
+
+    def create_all_visualizations(self, community_sizes: list, influential_nodes: dict):
+        """Create all visualizations with proper timing"""
+        print("\n" + "="*60)
+        print("🎨 STARTING VISUALIZATION PROCESS")
+        print("="*60)
+        
+        # Choose the right network visualization based on size
+        if self.G.number_of_nodes() > 1000:
+            print("📊 Large network detected, using optimized visualization...")
+            network_fig = self.plot_network_for_large_graph()
+        else:
+            print("📊 Small/medium network, using standard visualization...")
+            network_fig = self.plot_network_guaranteed()
+        
+        # Wait for user to see it
+        print("⏳ Waiting 3 seconds for network graph...")
+        plt.pause(3)
+        plt.close(network_fig)
+        
+        # Create community size distribution
+        self.plot_community_size_distribution(community_sizes)
+        print("⏳ Waiting 2 seconds for community graph...")
+        plt.pause(2)
+        plt.close()
+        
+        # Create centrality analysis
+        self.plot_centrality_analysis(influential_nodes)
+        print("⏳ Waiting 2 seconds for centrality graph...")
+        plt.pause(2)
+        plt.close()
+        
+        print("✅ ALL VISUALIZATIONS COMPLETED!")
+        print("📁 Check the 'results/images/' folder for saved images")
+        print("   - network_clear_edges.png (or network_large_optimized.png)")
+        print("   - community_size_distribution.png")
+        print("   - centrality_analysis.png")
