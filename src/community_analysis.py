@@ -1,7 +1,7 @@
 # src/community_analysis.py
 import networkx as nx
 import numpy as np
-from typing import Dict, List, Tuple  # ADD THIS IMPORT
+from typing import Dict, List, Tuple
 from collections import defaultdict
 
 class CommunityAnalyzer:
@@ -43,7 +43,7 @@ class CommunityAnalyzer:
         
         self.community_data = community_metrics
         
-        print("\n=== COMMUNITY METRICS ===")
+        print("COMMUNITY METRICS")
         for comm_id, metrics in community_metrics.items():
             print(f"Community {comm_id}: {metrics['size']} nodes, Density: {metrics['density']:.3f}")
         
@@ -87,7 +87,7 @@ class CommunityAnalyzer:
                 for node, score in sorted_nodes
             ]
         
-        print("\n=== TOP INFLUENTIAL NODES ===")
+        print("TOP INFLUENTIAL NODES")
         for measure, nodes in influential_nodes.items():
             print(f"{measure.capitalize()} Centrality:")
             for node, score, community in nodes:

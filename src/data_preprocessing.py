@@ -1,6 +1,7 @@
 # src/data_preprocessing.py
 import networkx as nx
-from typing import List, Tuple, Dict, Any  # ADD THIS IMPORT
+import pandas as pd
+from typing import List, Tuple, Dict, Any
 
 class DataPreprocessor:
     def __init__(self, edges: List[Tuple]):
@@ -38,7 +39,7 @@ class DataPreprocessor:
             'clustering_coefficient': nx.average_clustering(self.G),
         }
         
-        print("=== NETWORK STATISTICS ===")
+        print("NETWORK STATISTICS")
         for key, value in stats.items():
             print(f"{key}: {value}")
         

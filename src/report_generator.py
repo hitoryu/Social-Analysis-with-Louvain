@@ -13,17 +13,7 @@ class ReportGenerator:
         self.execution_time = execution_time
         
         # Ensure results directory exists
-        self._ensure_directories()
-    
-    def _ensure_directories(self):
-        """Ensure all necessary directories exist"""
-        directories = [
-            '../results/images',
-            '../results/reports', 
-            '../results/models'
-        ]
-        for directory in directories:
-            os.makedirs(directory, exist_ok=True)
+        os.makedirs('results/reports', exist_ok=True)
     
     def generate_comprehensive_report(self):
         """Generate comprehensive report"""
@@ -99,9 +89,9 @@ class ReportGenerator:
     
     def _save_report(self, report: Dict):
         """Save report to file"""
-        report_path = '../results/reports/comprehensive_report.txt'
-        with open(report_path, 'w', encoding='utf-8') as f:
-            f.write("=== FACEBOOK COMMUNITY ANALYSIS REPORT ===\n\n")
+        with open('results/reports/comprehensive_report.txt', 'w', encoding='utf-8') as f:
+            f.write("FACEBOOK COMMUNITY ANALYSIS REPORT\n")
+            f.write("=" * 50 + "\n\n")
             
             for section, content in report.items():
                 f.write(f"\n--- {section.upper()} ---\n")
@@ -111,4 +101,4 @@ class ReportGenerator:
                 else:
                     f.write(f"{content}\n")
         
-        print(f"📄 Report saved to: {report_path}")
+        print("Report saved to: results/reports/comprehensive_report.txt")

@@ -6,38 +6,48 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import networkx as nx
 
 # Add src to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 def run_comparison_study():
     """Comprehensive comparison of community detection algorithms"""
-    print("🔬 STARTING ALGORITHM COMPARISON STUDY")
+    print("STARTING ALGORITHM COMPARISON STUDY")
     print("=" * 60)
     
     try:
         from data_collection import DataCollector
         from data_preprocessing import DataPreprocessor
         from louvain_algorithm import LouvainCommunityDetection
-        from community_analysis import CommunityAnalyzer
         
         # Test on multiple datasets
         datasets = [
             ("Synthetic", "synthetic"),
             ("SNAP Facebook", "snap"), 
-            ("Kaggle Social", "kaggle")
         ]
+        
+        # Add Kaggle if available
+        collector = DataCollector()
+        kaggle_paths = [
+            "data/kaggle/facebook_edges.csv",
+            "data/kaggle/edges.csv", 
+            "data/kaggle/facebook.csv"
+        ]
+        
+        for path in kaggle_paths:
+            if os.path.exists(path):
+                datasets.append(("Kaggle Social", "kaggle"))
+                break
         
         results = []
         
         for dataset_name, dataset_type in datasets:
-            print(f"\n📊 ANALYZING: {dataset_name}")
+            print(f"ANALYZING: {dataset_name}")
             print("-" * 40)
             
             try:
                 # Load data
-                collector = DataCollector()
-                
                 if dataset_type == "synthetic":
                     edges = collector.method_1_synthetic_data()
                 elif dataset_type == "snap":
@@ -59,7 +69,7 @@ def run_comparison_study():
                     'density': nx.density(graph)
                 }
                 
-                print(f"   Network: {dataset_info['nodes']} nodes, {dataset_info['edges']} edges")
+                print(f"Network: {dataset_info['nodes']} nodes, {dataset_info['edges']} edges")
                 
                 # Test different algorithms
                 algorithms = [
@@ -70,7 +80,7 @@ def run_comparison_study():
                 ]
                 
                 for algo_name, algo_type in algorithms:
-                    print(f"   🧮 Testing {algo_name}...")
+                    print(f"Testing {algo_name}...")
                     
                     try:
                         start_time = time.time()
@@ -82,7 +92,6 @@ def run_comparison_study():
                             execution_time = time.time() - start_time
                             
                         elif algo_type == "girvan_newman":
-                            import networkx as nx
                             start_time = time.time()
                             comp = nx.community.girvan_newman(graph)
                             communities = tuple(sorted(c) for c in next(comp))
@@ -95,7 +104,6 @@ def run_comparison_study():
                             communities = len(communities)
                             
                         elif algo_type == "label_propagation":
-                            import networkx as nx
                             start_time = time.time()
                             communities = list(nx.community.label_propagation_communities(graph))
                             partition = {}
@@ -107,7 +115,6 @@ def run_comparison_study():
                             communities = len(communities)
                             
                         elif algo_type == "greedy_modularity":
-                            import networkx as nx
                             start_time = time.time()
                             communities = list(nx.community.greedy_modularity_communities(graph))
                             partition = {}
@@ -133,15 +140,15 @@ def run_comparison_study():
                         
                         results.append(result)
                         
-                        print(f"      ✅ {algo_name}: Modularity={modularity:.4f}, "
+                        print(f"  {algo_name}: Modularity={modularity:.4f}, "
                               f"Communities={communities}, Time={execution_time:.2f}s")
                         
                     except Exception as e:
-                        print(f"      ❌ {algo_name} failed: {e}")
+                        print(f"  {algo_name} failed: {e}")
                         continue
                         
             except Exception as e:
-                print(f"❌ Failed to process {dataset_name}: {e}")
+                print(f"Failed to process {dataset_name}: {e}")
                 continue
         
         # Generate comprehensive report
@@ -149,16 +156,16 @@ def run_comparison_study():
             generate_comparison_report(results)
             plot_comparison_results(results)
         else:
-            print("❌ No results to compare!")
+            print("No results to compare!")
             
     except Exception as e:
-        print(f"❌ Comparison study failed: {e}")
+        print(f"Comparison study failed: {e}")
         import traceback
         traceback.print_exc()
 
 def generate_comparison_report(results):
     """Generate detailed comparison report"""
-    print("\n📝 GENERATING COMPARISON REPORT")
+    print("GENERATING COMPARISON REPORT")
     print("=" * 50)
     
     # Create results directory
@@ -171,18 +178,10 @@ def generate_comparison_report(results):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     csv_path = f'results/comparison/algorithm_comparison_{timestamp}.csv'
     df.to_csv(csv_path, index=False)
-    print(f"✅ Raw results saved to: {csv_path}")
-    
-    # Generate summary statistics
-    summary = df.groupby(['dataset', 'algorithm']).agg({
-        'modularity': ['mean', 'std', 'max'],
-        'execution_time': ['mean', 'std'],
-        'communities': ['mean', 'std'],
-        'efficiency': ['mean', 'max']
-    }).round(4)
+    print(f"Raw results saved to: {csv_path}")
     
     # Print summary table
-    print("\n📊 SUMMARY STATISTICS")
+    print("SUMMARY STATISTICS")
     print("=" * 80)
     print(f"{'Dataset':<15} {'Algorithm':<20} {'Modularity':<12} {'Communities':<12} {'Time (s)':<10} {'Efficiency':<12}")
     print("-" * 80)
@@ -196,26 +195,20 @@ def generate_comparison_report(results):
         print(f"{dataset:<15} {algorithm:<20} {avg_modularity:<12.4f} {avg_communities:<12.0f} {avg_time:<10.2f} {avg_efficiency:<12.0f}")
     
     # Find best algorithms
-    print("\n🏆 BEST PERFORMING ALGORITHMS")
+    print("BEST PERFORMING ALGORITHMS")
     print("=" * 50)
     
     # Best by modularity
     best_modularity = df.loc[df.groupby('dataset')['modularity'].idxmax()]
-    print("\n📈 HIGHEST MODULARITY:")
+    print("HIGHEST MODULARITY:")
     for _, row in best_modularity.iterrows():
-        print(f"   {row['dataset']}: {row['algorithm']} (Modularity: {row['modularity']:.4f})")
+        print(f"  {row['dataset']}: {row['algorithm']} (Modularity: {row['modularity']:.4f})")
     
     # Fastest algorithms
     best_speed = df.loc[df.groupby('dataset')['execution_time'].idxmin()]
-    print("\n⚡ FASTEST ALGORITHMS:")
+    print("FASTEST ALGORITHMS:")
     for _, row in best_speed.iterrows():
-        print(f"   {row['dataset']}: {row['algorithm']} (Time: {row['execution_time']:.2f}s)")
-    
-    # Most efficient
-    best_efficiency = df.loc[df.groupby('dataset')['efficiency'].idxmax()]
-    print("\n🎯 MOST EFFICIENT (Nodes/Second):")
-    for _, row in best_efficiency.iterrows():
-        print(f"   {row['dataset']}: {row['algorithm']} (Efficiency: {row['efficiency']:.0f} nodes/s)")
+        print(f"  {row['dataset']}: {row['algorithm']} (Time: {row['execution_time']:.2f}s)")
     
     # Save detailed report
     report_path = f'results/comparison/comparison_report_{timestamp}.txt'
@@ -246,16 +239,19 @@ def generate_comparison_report(results):
         for _, row in best_speed.iterrows():
             f.write(f"  {row['dataset']}: {row['algorithm']} (Time: {row['execution_time']:.2f}s)\n")
     
-    print(f"✅ Detailed report saved to: {report_path}")
+    print(f"Detailed report saved to: {report_path}")
 
 def plot_comparison_results(results):
     """Create visualization plots for comparison results"""
-    print("\n🎨 CREATING COMPARISON VISUALIZATIONS")
+    print("CREATING COMPARISON VISUALIZATIONS")
+    
+    # Ensure directory exists
+    os.makedirs('results/comparison', exist_ok=True)
     
     df = pd.DataFrame(results)
     
     # Set style
-    plt.style.use('seaborn-v0_8')
+    plt.style.use('default')
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
     fig.suptitle('Community Detection Algorithm Comparison', fontsize=16, fontweight='bold')
     
@@ -274,7 +270,7 @@ def plot_comparison_results(results):
     time_pivot.plot(kind='bar', ax=ax2, color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'])
     ax2.set_title('Execution Time Comparison', fontweight='bold')
     ax2.set_ylabel('Time (seconds)')
-    ax2.set_yscale('log')  # Log scale for better visualization
+    ax2.set_yscale('log')
     ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     ax2.tick_params(axis='x', rotation=45)
     
@@ -293,30 +289,34 @@ def plot_comparison_results(results):
     efficiency_pivot.plot(kind='bar', ax=ax4, color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'])
     ax4.set_title('Algorithm Efficiency (Nodes/Second)', fontweight='bold')
     ax4.set_ylabel('Nodes per Second')
-    ax4.set_yscale('log')  # Log scale for better visualization
+    ax4.set_yscale('log')
     ax4.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     ax4.tick_params(axis='x', rotation=45)
     
     plt.tight_layout()
     
-    # Save plot
+    # Save plot - FIXED PATH
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     plot_path = f'results/comparison/comparison_plots_{timestamp}.png'
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"✅ Comparison plots saved to: {plot_path}")
     
+    # Ensure directory exists and save
+    os.makedirs(os.path.dirname(plot_path), exist_ok=True)
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    print(f"Comparison plots saved to: {plot_path}")
+    
+    # Show briefly then close to avoid blocking
     plt.show(block=False)
     plt.pause(2)
+    plt.close()
 
 def quick_comparison():
     """Quick comparison for testing"""
-    print("⚡ RUNNING QUICK COMPARISON")
+    print("RUNNING QUICK COMPARISON")
     
     try:
         from data_collection import DataCollector
         from data_preprocessing import DataPreprocessor
         from louvain_algorithm import LouvainCommunityDetection
-        import networkx as nx
         
         # Use synthetic data for quick test
         collector = DataCollector()
@@ -326,7 +326,7 @@ def quick_comparison():
         graph = preprocessor.build_graph()
         graph = preprocessor.clean_graph(min_degree=1)
         
-        print(f"📊 Testing on network: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
+        print(f"Testing on network: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
         
         # Test Louvain
         start_time = time.time()
@@ -334,7 +334,7 @@ def quick_comparison():
         partition, modularity = louvain.detect_communities(random_state=42)
         louvain_time = time.time() - start_time
         
-        print(f"✅ Louvain: Modularity={modularity:.4f}, Time={louvain_time:.3f}s")
+        print(f"Louvain: Modularity={modularity:.4f}, Time={louvain_time:.3f}s")
         
         # Test Girvan-Newman (limited)
         try:
@@ -343,12 +343,12 @@ def quick_comparison():
             communities = tuple(sorted(c) for c in next(comp))
             gn_modularity = nx.community.modularity(graph, communities)
             gn_time = time.time() - start_time
-            print(f"✅ Girvan-Newman: Modularity={gn_modularity:.4f}, Time={gn_time:.3f}s")
+            print(f"Girvan-Newman: Modularity={gn_modularity:.4f}, Time={gn_time:.3f}s")
         except Exception as e:
-            print(f"❌ Girvan-Newman failed: {e}")
+            print(f"Girvan-Newman failed: {e}")
         
     except Exception as e:
-        print(f" Quick comparison failed: {e}")
+        print(f"Quick comparison failed: {e}")
 
 if __name__ == "__main__":
     # You can choose which comparison to run
@@ -366,4 +366,4 @@ if __name__ == "__main__":
     else:
         quick_comparison()
     
-    print("\n COMPARISON COMPLETED!")
+    print("COMPARISON COMPLETED!")

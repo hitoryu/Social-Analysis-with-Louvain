@@ -1,0 +1,29 @@
+FACEBOOK COMMUNITY ANALYSIS REPORT
+==================================================
+
+
+--- TIMESTAMP ---
+2025-10-15 13:14:29
+
+--- NETWORK_STATS ---
+total_nodes: 100
+total_edges: 1045
+network_density: 0.2111111111111111
+average_degree: 20.9
+clustering_coefficient: 0.4886590266555807
+
+--- COMMUNITY_STATS ---
+total_communities: 4
+largest_community: 25
+smallest_community: 25
+average_community_size: 25.0
+modularity_score: 0.5565069481010051
+
+--- ALGORITHM_PERFORMANCE ---
+execution_time_seconds: 0.005595684051513672
+nodes_processed_per_second: 17870.916063059223
+
+--- KEY_FINDINGS ---
+community_structure: Clear
+network_type: Dense Network
+recommendations: Good community structure. Analyze influential nodes.
