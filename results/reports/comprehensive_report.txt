@@ -3,27 +3,27 @@ FACEBOOK COMMUNITY ANALYSIS REPORT
 
 
 --- TIMESTAMP ---
-2025-10-15 13:14:29
+2025-11-13 10:34:12
 
 --- NETWORK_STATS ---
-total_nodes: 100
-total_edges: 1045
-network_density: 0.2111111111111111
-average_degree: 20.9
-clustering_coefficient: 0.4886590266555807
+total_nodes: 4039
+total_edges: 88234
+network_density: 0.010819963503439287
+average_degree: 43.69101262688784
+clustering_coefficient: 0.6055467186200862
 
 --- COMMUNITY_STATS ---
-total_communities: 4
-largest_community: 25
-smallest_community: 25
-average_community_size: 25.0
-modularity_score: 0.5565069481010051
+total_communities: 15
+largest_community: 548
+smallest_community: 19
+average_community_size: 269.26666666666665
+modularity_score: 0.8348824648429318
 
 --- ALGORITHM_PERFORMANCE ---
-execution_time_seconds: 0.005595684051513672
-nodes_processed_per_second: 17870.916063059223
+execution_time_seconds: 0.6186239719390869
+nodes_processed_per_second: 6529.006606937149
 
 --- KEY_FINDINGS ---
 community_structure: Clear
-network_type: Dense Network
-recommendations: Good community structure. Analyze influential nodes.
+network_type: Medium Network
+recommendations: Excellent community structure. Focus on detailed community analysis.

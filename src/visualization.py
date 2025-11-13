@@ -1,4 +1,3 @@
-# src/visualization.py
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -21,7 +20,8 @@ class ResultVisualizer:
         # Ensure directories exist
         os.makedirs(self.images_dir, exist_ok=True)
         print(f"Saving images to: {self.images_dir}")
-        
+
+    # GIỮ NGUYÊN CÁC PHƯƠNG THỨC CŨ
     def diagnose_network_issues(self):
         """Check why edges might not be visible"""
         print("NETWORK DIAGNOSTICS:")
@@ -159,30 +159,75 @@ class ResultVisualizer:
         
         return plt.gcf()
 
+    # THÊM PHƯƠNG THỨC MỚI VÀO CLASS HIỆN CÓ
     def plot_community_size_distribution(self, community_sizes: list):
-        """Plot community size distribution"""
-        print("Generating community size distribution...")
+        """Plot community size distribution with accurate scaling"""
+        print("Generating accurate community size distribution...")
         
-        plt.figure(figsize=(12, 5))
+        # Create figure with proper layout
+        plt.figure(figsize=(14, 6))
         
+        # Subplot 1: Histogram with proper bins
         plt.subplot(1, 2, 1)
-        plt.hist(community_sizes, bins=15, alpha=0.7, color='skyblue', edgecolor='black')
+        
+        # Calculate optimal bins based on data range
+        max_size = max(community_sizes)
+        min_size = min(community_sizes)
+        
+        # Use more appropriate bin ranges
+        if max_size > 1000:
+            bins = [0, 50, 100, 200, 300, 500, 1000, max_size + 100]
+        else:
+            bins = [0, 20, 50, 100, 200, 300, 500, max_size + 50]
+        
+        # Create histogram with density=False to show actual counts
+        counts, bin_edges, patches = plt.hist(community_sizes, bins=bins, 
+                                             alpha=0.7, color='skyblue', 
+                                             edgecolor='black', 
+                                             density=False)  # Show actual counts, not density
+        
         plt.xlabel('Community Size')
-        plt.ylabel('Frequency')
-        plt.title('Community Size Distribution')
+        plt.ylabel('Number of Communities')
+        plt.title('Community Size Distribution (Actual Counts)')
         plt.grid(True, alpha=0.3)
         
+        # Add value labels on bars
+        for i, (count, patch) in enumerate(zip(counts, patches)):
+            if count > 0:
+                plt.text(patch.get_x() + patch.get_width()/2, count + 0.1,
+                        f'{int(count)}', ha='center', va='bottom', fontweight='bold')
+        
+        # Subplot 2: Rank-size plot with proper log scale
         plt.subplot(1, 2, 2)
+        
         sizes_sorted = sorted(community_sizes, reverse=True)
-        plt.plot(range(1, len(sizes_sorted) + 1), sizes_sorted, 'o-', linewidth=2, color='green')
+        ranks = range(1, len(sizes_sorted) + 1)
+        
+        plt.plot(ranks, sizes_sorted, 'o-', linewidth=2, color='green', markersize=6)
         plt.xlabel('Community Rank')
-        plt.ylabel('Size')
+        plt.ylabel('Community Size')
         plt.title('Rank-Size Distribution')
         plt.grid(True, alpha=0.3)
-        if max(sizes_sorted) > 100:
+        
+        # Use log scale only if there's large variation
+        if max_size / min_size > 100:  # Only use log if variation > 100x
             plt.yscale('log')
+            plt.ylabel('Community Size (log scale)')
+        
+        # Add some data point labels
+        for i, (rank, size) in enumerate(zip(ranks, sizes_sorted)):
+            if i < 5 or i % 5 == 0 or i == len(ranks) - 1:  # Label first 5, every 5th, and last
+                plt.annotate(f'{size}', (rank, size), 
+                            textcoords="offset points", 
+                            xytext=(0,10), ha='center', fontsize=8)
         
         plt.tight_layout()
+        
+        # Print debug information
+        print(f"Community sizes: {sorted(community_sizes, reverse=True)}")
+        print(f"Total communities: {len(community_sizes)}")
+        print(f"Size range: {min_size} - {max_size}")
+        print(f"Bin edges: {bins}")
         
         save_path = os.path.join(self.images_dir, 'community_size_distribution.png')
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -190,37 +235,49 @@ class ResultVisualizer:
         
         plt.show(block=False)
         plt.pause(1)
+        return plt.gcf()
 
     def plot_centrality_analysis(self, influential_nodes: dict):
-        """Plot centrality analysis"""
+        """Plot centrality analysis with improved formatting"""
         print("Generating centrality analysis...")
         
-        fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
         
         measures = list(influential_nodes.keys())
         colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
         
         for idx, measure in enumerate(measures):
-            nodes_data = influential_nodes[measure][:6]
+            nodes_data = influential_nodes[measure][:6]  # Top 6 nodes
+            
+            if not nodes_data:
+                continue
+                
             nodes = [f"Node {x[0]}" for x in nodes_data]
             scores = [x[1] for x in nodes_data]
             communities = [x[2] for x in nodes_data]
             
-            bars = axes[idx].bar(nodes, scores, color=colors[idx], alpha=0.7, edgecolor='black')
-            axes[idx].set_title(f'{measure.capitalize()} Centrality', fontweight='bold')
-            axes[idx].set_ylabel('Centrality Score')
-            axes[idx].tick_params(axis='x', rotation=45)
-            axes[idx].grid(True, alpha=0.3)
+            # Create horizontal bar chart for better readability
+            bars = axes[idx].barh(nodes, scores, color=colors[idx], alpha=0.7, 
+                                 edgecolor='black', height=0.6)
+            axes[idx].set_title(f'{measure.capitalize()} Centrality', fontweight='bold', fontsize=12)
+            axes[idx].set_xlabel('Centrality Score')
             
             # Add values on bars
             for bar, score in zip(bars, scores):
-                axes[idx].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.001,
-                             f'{score:.3f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+                width = bar.get_width()
+                axes[idx].text(width + 0.001, bar.get_y() + bar.get_height()/2,
+                             f'{score:.4f}', ha='left', va='center', 
+                             fontsize=9, fontweight='bold')
             
             # Add community info
             for i, (node, comm) in enumerate(zip(nodes, communities)):
-                axes[idx].text(i, -0.1, f'Comm {comm}', ha='center', va='top', 
-                             fontsize=8, transform=axes[idx].transData)
+                axes[idx].text(-0.05, i, f'Comm {comm}', ha='right', va='center', 
+                             fontsize=8, color='gray', transform=axes[idx].transData)
+            
+            # Set consistent x-limits for comparison
+            max_score = max(scores) if scores else 0
+            axes[idx].set_xlim(0, max_score * 1.15)
+            axes[idx].grid(True, alpha=0.3, axis='x')
         
         plt.tight_layout()
         
@@ -230,6 +287,7 @@ class ResultVisualizer:
         
         plt.show(block=False)
         plt.pause(1)
+        return plt.gcf()
 
     def create_all_visualizations(self, community_sizes: list, influential_nodes: dict):
         """Create all visualizations with proper timing"""
@@ -251,16 +309,16 @@ class ResultVisualizer:
         plt.close(network_fig)
         
         # Create community size distribution
-        self.plot_community_size_distribution(community_sizes)
-        print("Waiting 2 seconds for community graph...")
-        plt.pause(2)
-        plt.close()
+        community_fig = self.plot_community_size_distribution(community_sizes)
+        print("Waiting 3 seconds for community graph...")
+        plt.pause(3)
+        plt.close(community_fig)
         
         # Create centrality analysis
-        self.plot_centrality_analysis(influential_nodes)
-        print("Waiting 2 seconds for centrality graph...")
-        plt.pause(2)
-        plt.close()
+        centrality_fig = self.plot_centrality_analysis(influential_nodes)
+        print("Waiting 3 seconds for centrality graph...")
+        plt.pause(3)
+        plt.close(centrality_fig)
         
         print("ALL VISUALIZATIONS COMPLETED!")
         print("Check the 'results/images/' folder for saved images")
