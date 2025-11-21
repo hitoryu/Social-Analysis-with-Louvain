@@ -66,7 +66,7 @@ def main():
         influential_nodes = analyzer.find_influential_nodes(top_k=6)
         
         # Step 5: Visualization
-        print("STEP 5: Creating visualizations...")
+        print("STEP 5: Creating comprehensive visualizations...")
         
         # Ensure results directory exists
         os.makedirs('results/images', exist_ok=True)
@@ -75,8 +75,8 @@ def main():
         
         visualizer = ResultVisualizer(graph, partition)
         
-        # Use the method that handles all visualizations properly
-        visualizer.create_all_visualizations(
+        # Use the COMPREHENSIVE visualization method that shows ALL communities
+        visualizer.create_comprehensive_visualizations(
             list(community_sizes.values()), 
             influential_nodes
         )
@@ -95,6 +95,7 @@ def main():
         print(f"Network Size: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
         print(f"Results saved in 'results/' folder")
         print(f"Visualizations saved in 'results/images/'")
+        print(f"All {len(set(partition.values()))} communities are displayed in visualizations")
         
     except Exception as e:
         print(f"ERROR: {e}")

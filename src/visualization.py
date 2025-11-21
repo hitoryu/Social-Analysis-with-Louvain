@@ -1,3 +1,4 @@
+# visualization.py
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -20,8 +21,7 @@ class ResultVisualizer:
         # Ensure directories exist
         os.makedirs(self.images_dir, exist_ok=True)
         print(f"Saving images to: {self.images_dir}")
-
-    # GIỮ NGUYÊN CÁC PHƯƠNG THỨC CŨ
+        
     def diagnose_network_issues(self):
         """Check why edges might not be visible"""
         print("NETWORK DIAGNOSTICS:")
@@ -159,7 +159,88 @@ class ResultVisualizer:
         
         return plt.gcf()
 
-    # THÊM PHƯƠNG THỨC MỚI VÀO CLASS HIỆN CÓ
+    def plot_network_all_communities(self, figsize=(16, 12)):
+        """Plot network with ALL communities visible"""
+        print("Creating network visualization with ALL communities...")
+        
+        # Run diagnostics first
+        self.diagnose_network_issues()
+        
+        plt.figure(figsize=figsize)
+        pos = nx.spring_layout(self.G, seed=42, k=0.3, iterations=30)
+        
+        unique_communities = list(set(self.partition.values()))
+        print(f"Total communities to display: {len(unique_communities)}")
+        
+        # Use a colormap with enough colors for all communities
+        if len(unique_communities) <= 10:
+            colors = plt.cm.Set3(np.linspace(0, 1, len(unique_communities)))
+        elif len(unique_communities) <= 20:
+            colors = plt.cm.tab20(np.linspace(0, 1, len(unique_communities)))
+        else:
+            # For more than 20 communities, cycle through colors
+            colors = plt.cm.tab20(np.linspace(0, 1, 20))
+        
+        print(f"Drawing {self.G.number_of_edges()} edges...")
+        
+        # 1. Draw edges first
+        edge_alpha = 0.3 if self.G.number_of_edges() > 10000 else 0.5
+        edge_width = 0.5 if self.G.number_of_edges() > 10000 else 1.0
+        
+        nx.draw_networkx_edges(
+            self.G, pos,
+            alpha=edge_alpha,
+            edge_color='#2E86AB',
+            width=edge_width
+        )
+        
+        # 2. Draw nodes for ALL communities
+        node_size = 20 if self.G.number_of_nodes() > 1000 else 50
+        
+        for i, comm_id in enumerate(unique_communities):
+            nodes = [node for node in self.G.nodes() if self.partition[node] == comm_id]
+            
+            # Cycle colors if more than 20 communities
+            if len(unique_communities) > 20:
+                color = colors[i % 20]
+            else:
+                color = colors[i]
+            
+            nx.draw_networkx_nodes(
+                self.G, pos,
+                nodelist=nodes,
+                node_color=[color],
+                node_size=node_size,
+                alpha=0.7,
+                edgecolors='black',
+                linewidths=0.5,
+                label=f'Community {comm_id}'
+            )
+        
+        # 3. Create a better legend for many communities
+        plt.title(f'Network Communities - All {len(unique_communities)} Communities', 
+                  fontsize=14, fontweight='bold')
+        
+        # For many communities, create a compact legend or remove it
+        if len(unique_communities) <= 15:
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+        else:
+            # For too many communities, don't show legend but print info
+            print(f"Too many communities ({len(unique_communities)}) for legend. Community IDs: {unique_communities}")
+        
+        plt.axis('off')
+        plt.tight_layout()
+        
+        # Save with high quality
+        save_path = os.path.join(self.images_dir, 'network_all_communities.png')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Network with ALL communities saved to: {save_path}")
+        
+        plt.show(block=False)
+        plt.pause(2)
+        
+        return plt.gcf()
+
     def plot_community_size_distribution(self, community_sizes: list):
         """Plot community size distribution with accurate scaling"""
         print("Generating accurate community size distribution...")
@@ -236,6 +317,89 @@ class ResultVisualizer:
         plt.show(block=False)
         plt.pause(1)
         return plt.gcf()
+
+    def plot_community_size_distribution_detailed(self, community_sizes: list):
+        """Plot detailed community size distribution with all communities"""
+        print("Generating detailed community size distribution...")
+        
+        plt.figure(figsize=(14, 6))
+        
+        # Subplot 1: Histogram with all communities
+        plt.subplot(1, 2, 1)
+        
+        # Create bins that cover the full range
+        max_size = max(community_sizes)
+        min_size = min(community_sizes)
+        
+        # Create appropriate bins based on data range
+        if max_size > 1000:
+            bins = np.linspace(0, max_size + 100, 15)
+        else:
+            bins = np.linspace(0, max_size + 50, 12)
+        
+        counts, bin_edges, patches = plt.hist(community_sizes, bins=bins, 
+                                             alpha=0.7, color='skyblue', 
+                                             edgecolor='black')
+        
+        plt.xlabel('Community Size')
+        plt.ylabel('Number of Communities')
+        plt.title(f'Community Size Distribution\n(Total: {len(community_sizes)} communities)')
+        plt.grid(True, alpha=0.3)
+        
+        # Add value labels on bars
+        for i, (count, patch) in enumerate(zip(counts, patches)):
+            if count > 0:
+                plt.text(patch.get_x() + patch.get_width()/2, count + 0.1,
+                        f'{int(count)}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+        
+        # Subplot 2: Rank-size plot with all communities labeled
+        plt.subplot(1, 2, 2)
+        
+        sizes_sorted = sorted(community_sizes, reverse=True)
+        ranks = range(1, len(sizes_sorted) + 1)
+        
+        plt.plot(ranks, sizes_sorted, 'o-', linewidth=2, color='green', markersize=4)
+        plt.xlabel('Community Rank')
+        plt.ylabel('Community Size')
+        plt.title('Rank-Size Distribution (All Communities)')
+        plt.grid(True, alpha=0.3)
+        
+        # Label important points
+        label_indices = [0]  # First point
+        if len(ranks) > 1:
+            label_indices.append(len(ranks)//4)
+        if len(ranks) > 2:
+            label_indices.append(len(ranks)//2)
+        if len(ranks) > 3:
+            label_indices.append(len(ranks)-1)  # Last point
+        
+        for idx in label_indices:
+            if idx < len(ranks):
+                plt.annotate(f'Rank {ranks[idx]}\nSize: {sizes_sorted[idx]}', 
+                            (ranks[idx], sizes_sorted[idx]),
+                            textcoords="offset points", 
+                            xytext=(10, 10), 
+                            ha='left', 
+                            fontsize=8,
+                            bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.7))
+        
+        plt.tight_layout()
+        
+        # Print detailed information
+        print(f"=== COMMUNITY SIZE ANALYSIS ===")
+        print(f"Total communities: {len(community_sizes)}")
+        print(f"Size range: {min_size} - {max_size}")
+        print(f"Average size: {np.mean(community_sizes):.1f}")
+        print(f"Median size: {np.median(community_sizes):.1f}")
+        print(f"Top 5 largest communities: {sorted(community_sizes, reverse=True)[:5]}")
+        
+        save_path = os.path.join(self.images_dir, 'community_size_detailed.png')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Detailed community size distribution saved to: {save_path}")
+        
+        plt.show(block=False)
+        plt.pause(2)
+        plt.close()
 
     def plot_centrality_analysis(self, influential_nodes: dict):
         """Plot centrality analysis with improved formatting"""
@@ -322,3 +486,30 @@ class ResultVisualizer:
         
         print("ALL VISUALIZATIONS COMPLETED!")
         print("Check the 'results/images/' folder for saved images")
+
+    def create_comprehensive_visualizations(self, community_sizes: list, influential_nodes: dict):
+        """Create comprehensive visualizations showing ALL communities"""
+        print("=" * 60)
+        print("CREATING COMPREHENSIVE VISUALIZATIONS")
+        print("=" * 60)
+        
+        # 1. Network with all communities
+        print("1. Creating network with ALL communities...")
+        network_fig = self.plot_network_all_communities()
+        plt.pause(3)
+        plt.close(network_fig)
+        
+        # 2. Detailed community size distribution
+        print("2. Creating detailed community size distribution...")
+        self.plot_community_size_distribution_detailed(community_sizes)
+        plt.pause(3)
+        plt.close()
+        
+        # 3. Centrality analysis
+        print("3. Creating centrality analysis...")
+        self.plot_centrality_analysis(influential_nodes)
+        plt.pause(3)
+        plt.close()
+        
+        print("COMPREHENSIVE VISUALIZATIONS COMPLETED!")
+        print(f"All visualizations saved to: {self.images_dir}")
