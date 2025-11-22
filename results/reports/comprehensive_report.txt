@@ -3,7 +3,7 @@ FACEBOOK COMMUNITY ANALYSIS REPORT
 
 
 --- TIMESTAMP ---
-2025-11-22 08:14:31
+2025-11-22 08:51:25
 
 --- NETWORK_STATS ---
 total_nodes: 4039
@@ -20,8 +20,8 @@ average_community_size: 224.38888888888889
 modularity_score: 0.604
 
 --- ALGORITHM_PERFORMANCE ---
-execution_time_seconds: 0.7217392921447754
-nodes_processed_per_second: 5596.203565414044
+execution_time_seconds: 0.7269790172576904
+nodes_processed_per_second: 5555.868744652235
 
 --- KEY_FINDINGS ---
 community_structure: Clear
