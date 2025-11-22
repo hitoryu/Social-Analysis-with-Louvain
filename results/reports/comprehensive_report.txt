@@ -3,7 +3,7 @@ FACEBOOK COMMUNITY ANALYSIS REPORT
 
 
 --- TIMESTAMP ---
-2025-11-21 21:35:05
+2025-11-22 08:14:31
 
 --- NETWORK_STATS ---
 total_nodes: 4039
@@ -13,17 +13,17 @@ average_degree: 43.69101262688784
 clustering_coefficient: 0.6055467186200862
 
 --- COMMUNITY_STATS ---
-total_communities: 15
-largest_community: 548
+total_communities: 18
+largest_community: 551
 smallest_community: 19
-average_community_size: 269.26666666666665
-modularity_score: 0.8348824648429318
+average_community_size: 224.38888888888889
+modularity_score: 0.604
 
 --- ALGORITHM_PERFORMANCE ---
-execution_time_seconds: 0.6458032131195068
-nodes_processed_per_second: 6254.227166956782
+execution_time_seconds: 0.7217392921447754
+nodes_processed_per_second: 5596.203565414044
 
 --- KEY_FINDINGS ---
 community_structure: Clear
 network_type: Medium Network
-recommendations: Excellent community structure. Focus on detailed community analysis.
+recommendations: Good community structure. Analyze influential nodes.

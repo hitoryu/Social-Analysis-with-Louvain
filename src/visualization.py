@@ -92,7 +92,16 @@ class ResultVisualizer:
             nx.draw_networkx_labels(self.G, pos, font_size=8, font_color='darkred')
         
         plt.title('Network Communities - Clear Edge Visualization', fontsize=16, fontweight='bold')
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        
+        # Legend for all communities
+        if len(unique_communities) <= 18:
+            plt.legend(
+                bbox_to_anchor=(1.05, 1), 
+                loc='upper left',
+                fontsize=8,
+                ncol=1
+            )
+        
         plt.axis('off')
         plt.tight_layout()
         
@@ -147,7 +156,11 @@ class ResultVisualizer:
         
         plt.title(f'Large Network: {len(self.G.nodes())} users, {len(self.G.edges())} connections', 
                   fontsize=12, fontweight='bold')
-        plt.legend(fontsize=8, bbox_to_anchor=(1.05, 1))
+        
+        # Legend for large graph
+        if len(unique_communities) <= 10:
+            plt.legend(fontsize=8, bbox_to_anchor=(1.05, 1))
+        
         plt.axis('off')
         plt.tight_layout()
         
@@ -159,8 +172,8 @@ class ResultVisualizer:
         
         return plt.gcf()
 
-    def plot_network_all_communities(self, figsize=(16, 12)):
-        """Plot network with ALL communities visible"""
+    def plot_network_all_communities(self, figsize=(20, 12)):
+        """Plot network with ALL communities visible - UPDATED FOR 18 COMMUNITIES"""
         print("Creating network visualization with ALL communities...")
         
         # Run diagnostics first
@@ -169,17 +182,15 @@ class ResultVisualizer:
         plt.figure(figsize=figsize)
         pos = nx.spring_layout(self.G, seed=42, k=0.3, iterations=30)
         
-        unique_communities = list(set(self.partition.values()))
+        unique_communities = sorted(list(set(self.partition.values())))
         print(f"Total communities to display: {len(unique_communities)}")
         
         # Use a colormap with enough colors for all communities
         if len(unique_communities) <= 10:
             colors = plt.cm.Set3(np.linspace(0, 1, len(unique_communities)))
-        elif len(unique_communities) <= 20:
-            colors = plt.cm.tab20(np.linspace(0, 1, len(unique_communities)))
         else:
-            # For more than 20 communities, cycle through colors
-            colors = plt.cm.tab20(np.linspace(0, 1, 20))
+            # Use tab20 for up to 20 communities
+            colors = plt.cm.tab20(np.linspace(0, 1, min(20, len(unique_communities))))
         
         print(f"Drawing {self.G.number_of_edges()} edges...")
         
@@ -217,13 +228,33 @@ class ResultVisualizer:
                 label=f'Community {comm_id}'
             )
         
-        # 3. Create a better legend for many communities
+        # 3. UPDATED LEGEND FOR 18 COMMUNITIES
         plt.title(f'Network Communities - All {len(unique_communities)} Communities', 
                   fontsize=14, fontweight='bold')
         
-        # For many communities, create a compact legend or remove it
-        if len(unique_communities) <= 15:
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+        # Hiển thị legend cho tất cả 18 communities
+        if len(unique_communities) <= 18:
+            plt.legend(
+                bbox_to_anchor=(1.02, 1),
+                loc='upper left',
+                fontsize=7,
+                ncol=1,
+                framealpha=0.9,
+                markerscale=0.8,
+                handletextpad=0.4,
+                title='Communities',
+                title_fontsize=9
+            )
+        elif len(unique_communities) <= 24:
+            plt.legend(
+                bbox_to_anchor=(1.05, 1),
+                loc='upper left',
+                fontsize=6,
+                ncol=2,
+                framealpha=0.9,
+                markerscale=0.7,
+                handletextpad=0.3
+            )
         else:
             # For too many communities, don't show legend but print info
             print(f"Too many communities ({len(unique_communities)}) for legend. Community IDs: {unique_communities}")
@@ -239,6 +270,70 @@ class ResultVisualizer:
         plt.show(block=False)
         plt.pause(2)
         
+        return plt.gcf()
+
+    def plot_network_18_communities_optimized(self, figsize=(22, 12)):
+        """Special version optimized exactly for 18 communities"""
+        print("Creating optimized visualization for 18 communities...")
+        
+        plt.figure(figsize=figsize)
+        pos = nx.spring_layout(self.G, seed=42, k=0.4, iterations=50)
+        
+        unique_communities = sorted(list(set(self.partition.values())))
+        
+        if len(unique_communities) != 18:
+            print(f"Warning: Expected 18 communities, but found {len(unique_communities)}")
+        
+        # Use tab20 colormap (exactly 20 colors)
+        colors = plt.cm.tab20(np.linspace(0, 1, 20))
+        
+        # Draw edges
+        nx.draw_networkx_edges(
+            self.G, pos,
+            alpha=0.4,
+            edge_color='gray',
+            width=0.8
+        )
+        
+        # Draw nodes for each community
+        for i, comm_id in enumerate(unique_communities):
+            nodes = [node for node in self.G.nodes() if self.partition[node] == comm_id]
+            nx.draw_networkx_nodes(
+                self.G, pos,
+                nodelist=nodes,
+                node_color=[colors[i]],
+                node_size=80,
+                alpha=0.8,
+                edgecolors='black',
+                linewidths=0.5,
+                label=f'Community {comm_id} ({len(nodes)} nodes)'
+            )
+        
+        # PERFECT LEGEND FOR 18 COMMUNITIES
+        plt.legend(
+            bbox_to_anchor=(1.01, 1),
+            loc='upper left',
+            fontsize=7,
+            ncol=1,
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            framealpha=0.95,
+            markerscale=0.8,
+            handlelength=1.0,
+            handletextpad=0.5
+        )
+        
+        plt.title(f'Network with {len(unique_communities)} Communities', fontsize=16, pad=20)
+        plt.axis('off')
+        plt.tight_layout()
+        
+        save_path = os.path.join(self.images_dir, 'network_18_communities_optimized.png')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Optimized 18 communities network saved to: {save_path}")
+        
+        plt.show(block=False)
+        plt.pause(2)
         return plt.gcf()
 
     def plot_community_size_distribution(self, community_sizes: list):
@@ -493,23 +588,95 @@ class ResultVisualizer:
         print("CREATING COMPREHENSIVE VISUALIZATIONS")
         print("=" * 60)
         
-        # 1. Network with all communities
+        # 1. Network with all communities (using updated method)
         print("1. Creating network with ALL communities...")
         network_fig = self.plot_network_all_communities()
         plt.pause(3)
         plt.close(network_fig)
         
-        # 2. Detailed community size distribution
-        print("2. Creating detailed community size distribution...")
+        # 2. Special optimized version for 18 communities
+        unique_communities = list(set(self.partition.values()))
+        if len(unique_communities) == 18:
+            print("2. Creating optimized visualization for 18 communities...")
+            network_18_fig = self.plot_network_18_communities_optimized()
+            plt.pause(3)
+            plt.close(network_18_fig)
+        
+        # 3. Detailed community size distribution
+        print("3. Creating detailed community size distribution...")
         self.plot_community_size_distribution_detailed(community_sizes)
         plt.pause(3)
         plt.close()
         
-        # 3. Centrality analysis
-        print("3. Creating centrality analysis...")
+        # 4. Centrality analysis
+        print("4. Creating centrality analysis...")
         self.plot_centrality_analysis(influential_nodes)
         plt.pause(3)
         plt.close()
         
         print("COMPREHENSIVE VISUALIZATIONS COMPLETED!")
         print(f"All visualizations saved to: {self.images_dir}")
+
+    def create_community_table(self):
+        """Tạo bảng liệt kê chi tiết các community"""
+        
+        # Tính toán thống kê cho từng community
+        community_stats = {}
+        
+        for node, comm_id in self.partition.items():
+            if comm_id not in community_stats:
+                community_stats[comm_id] = {
+                    'size': 0,
+                    'nodes': [],
+                    'degree_sum': 0
+                }
+            
+            community_stats[comm_id]['size'] += 1
+            community_stats[comm_id]['nodes'].append(node)
+            community_stats[comm_id]['degree_sum'] += self.G.degree(node)
+        
+        # Tạo bảng liệt kê
+        print("\n" + "="*60)
+        print("BẢNG LIỆT KÊ CÁC COMMUNITY")
+        print("="*60)
+        print(f"{'Community ID':<15} {'Size':<8} {'Avg Degree':<12} {'Nodes'}")
+        print("-"*60)
+        
+        for comm_id, stats in sorted(community_stats.items()):
+            avg_degree = stats['degree_sum'] / stats['size'] if stats['size'] > 0 else 0
+            sample_nodes = stats['nodes'][:5]  # Hiển thị 5 node đầu tiên
+            nodes_str = str(sample_nodes) + ("..." if len(stats['nodes']) > 5 else "")
+            
+            print(f"{comm_id:<15} {stats['size']:<8} {avg_degree:<12.2f} {nodes_str}")
+        
+        # Tổng kết
+        print("-"*60)
+        print(f"Tổng số communities: {len(community_stats)}")
+        print(f"Tổng số nodes: {self.G.number_of_nodes()}")
+        
+        return community_stats
+
+    def export_community_table_to_file(self, filename="community_table.txt"):
+        """Xuất bảng liệt kê community ra file"""
+        
+        community_stats = self.create_community_table()
+        
+        filepath = os.path.join(self.results_dir, filename)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write("BẢNG LIỆT KÊ CÁC COMMUNITY\n")
+            f.write("="*50 + "\n")
+            f.write(f"{'Community ID':<15} {'Size':<8} {'Avg Degree':<12} {'Nodes (first 5)'}\n")
+            f.write("-"*50 + "\n")
+            
+            for comm_id, stats in sorted(community_stats.items()):
+                avg_degree = stats['degree_sum'] / stats['size'] if stats['size'] > 0 else 0
+                sample_nodes = stats['nodes'][:5]
+                nodes_str = str(sample_nodes) + ("..." if len(stats['nodes']) > 5 else "")
+                
+                f.write(f"{comm_id:<15} {stats['size']:<8} {avg_degree:<12.2f} {nodes_str}\n")
+            
+            f.write("-"*50 + "\n")
+        
+        print(f"Community table exported to: {filepath}")
+        return filepath
